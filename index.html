@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>くりあがりの ひっさん v6</title>
+  <style>
+    :root {
+      --bg: #fffaf0;
+      --card: #ffffff;
+      --ink: #333333;
+      --line: #d9cdb8;
+      --soft: #f4ecd9;
+      --accent: #ffe08a;
+      --accent2: #dff3ff;
+      --ok: #2e9b57;
+      --ng: #d64545;
+      --red: #e33b3b;
+      --carry: #8a4fd8;
+      --add: #8bdc65;
+      --orange: #f3a43b;
+      --shadow: 0 8px 22px rgba(0,0,0,0.08);
+      --radius: 22px;
+      --sq: 13px;
+      --sq-gap: 1px;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      touch-action: manipulation;
+    }
+
+    .app {
+      min-height: 100vh;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: var(--card);
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      box-shadow: var(--shadow);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(24px, 4vw, 38px);
+      letter-spacing: 0.04em;
+    }
+
+    .score {
+      font-size: clamp(18px, 2.5vw, 28px);
+      font-weight: bold;
+      background: var(--accent2);
+      border-radius: 18px;
+      padding: 10px 16px;
+      white-space: nowrap;
+    }
+
+    .main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 0.92fr 1.08fr;
+      gap: 16px;
+      min-height: 0;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .problem {
+      text-align: center;
+      font-size: clamp(30px, 5vw, 54px);
+      font-weight: 800;
+      margin: 4px 0 12px;
+      letter-spacing: 0.06em;
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .step {
+      border: 2px solid var(--line);
+      border-radius: 18px;
+      padding: 10px;
+      background: #fffdf8;
+    }
+
+    .step.active {
+      outline: 4px solid var(--accent);
+    }
+
+    .step-title {
+      font-size: clamp(17px, 2.2vw, 24px);
+      font-weight: 800;
+      margin-bottom: 8px;
+      line-height: 1.35;
+    }
+
+    .choice-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      font-family: inherit;
+      font-size: clamp(18px, 2.3vw, 26px);
+      font-weight: 800;
+      border: 2px solid var(--line);
+      border-radius: 16px;
+      background: #fff4c9;
+      color: var(--ink);
+      padding: 12px 14px;
+      min-height: 52px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    .choice-row button {
+      flex: 1;
+    }
+
+    .hissan-wrap {
+      display: flex;
+      justify-content: center;
+      margin-top: 6px;
+    }
+
+    .hissan {
+      display: grid;
+      grid-template-columns: 50px 78px 78px;
+      grid-auto-rows: 58px;
+      align-items: center;
+      justify-items: center;
+      font-size: clamp(34px, 5vw, 58px);
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .carry-input {
+      grid-column: 2;
+      grid-row: 1;
+      width: 54px;
+      height: 42px;
+      font-size: 28px;
+      align-self: start;
+      margin-top: 0;
+    }
+
+    .op {
+      grid-column: 1;
+      grid-row: 3;
+    }
+
+    .a10 { grid-column: 2; grid-row: 2; }
+    .a1  { grid-column: 3; grid-row: 2; }
+    .b10 { grid-column: 2; grid-row: 3; }
+    .b1  { grid-column: 3; grid-row: 3; }
+
+    .line {
+      grid-column: 1 / 4;
+      grid-row: 4;
+      width: 100%;
+      height: 4px;
+      background: var(--ink);
+      align-self: start;
+      margin-top: 6px;
+    }
+
+    .ans10 {
+      grid-column: 2;
+      grid-row: 4;
+      margin-top: 14px;
+    }
+
+    .ans1 {
+      grid-column: 3;
+      grid-row: 4;
+      margin-top: 14px;
+    }
+
+    input.digit {
+      width: 66px;
+      height: 56px;
+      border: 3px solid var(--line);
+      border-radius: 14px;
+      background: #ffffff;
+      text-align: center;
+      font-size: 36px;
+      font-weight: 900;
+      color: var(--ink);
+      font-family: inherit;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input.digit:focus {
+      outline: 5px solid var(--accent);
+    }
+
+    input.digit:disabled {
+      background: #f2f2f2;
+      opacity: 0.75;
+    }
+
+    .place-title {
+      font-size: clamp(21px, 3vw, 32px);
+      font-weight: 900;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .table {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border: 3px solid var(--line);
+      border-radius: 20px;
+      overflow: hidden;
+      background: #fffdf7;
+      position: relative;
+    }
+
+    .cell {
+      min-height: 126px;
+      border-right: 2px solid var(--line);
+      border-bottom: 2px solid var(--line);
+      padding: 10px;
+      position: relative;
+    }
+
+    .cell:nth-child(2n) {
+      border-right: none;
+    }
+
+    .cell.head {
+      min-height: auto;
+      background: var(--soft);
+      text-align: center;
+      font-size: clamp(19px, 2.6vw, 28px);
+      font-weight: 900;
+      padding: 10px;
+    }
+
+    .label {
+      font-size: clamp(16px, 2vw, 22px);
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .label .red-num {
+      color: var(--red);
+      font-size: 1.22em;
+    }
+
+    .blocks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      align-items: flex-start;
+      min-height: 86px;
+    }
+
+    .vertical-ones {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sq-gap);
+      align-items: flex-start;
+    }
+
+    .ten-block {
+      width: var(--sq);
+      display: inline-flex;
+      flex-direction: column;
+      gap: 0;
+      border: 2px solid #b99a52;
+      border-radius: 3px;
+      overflow: hidden;
+      background: #fff6cf;
+    }
+
+    .ten-unit {
+      width: 100%;
+      height: var(--sq);
+      border-bottom: 1px solid #d3b463;
+      background: #fff6cf;
+    }
+
+    .ten-unit:last-child {
+      border-bottom: none;
+    }
+
+    .ten-block.add {
+      border-color: #62ad44;
+      background: #e9ffd9;
+    }
+
+    .ten-block.add .ten-unit {
+      background: #d9f7c7;
+      border-bottom-color: #92cf78;
+    }
+
+    .ten-block.orange {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 4px rgba(243, 164, 59, 0.18);
+    }
+
+    .ten-block.orange .ten-unit {
+      background: #ffe1b5;
+      border-bottom-color: #eeae56;
+    }
+
+    .ten-block.carried {
+      border-color: var(--carry);
+      background: #f1eaff;
+      box-shadow: 0 0 0 3px rgba(138, 79, 216, 0.18);
+    }
+
+    .ten-block.carried .ten-unit {
+      background: #eadcff;
+      border-bottom-color: #b992ef;
+    }
+
+    .ten-block.highlight:not(.carried):not(.orange) {
+      border-color: var(--red);
+      box-shadow: 0 0 0 4px rgba(227, 59, 59, 0.18);
+    }
+
+    .ten-block.highlight:not(.carried):not(.orange) .ten-unit {
+      background: #ffdede;
+      border-bottom-color: #f1a0a0;
+    }
+
+    .one-dot {
+      width: var(--sq);
+      height: var(--sq);
+      border: 1.8px solid #6aa3c8;
+      background: #e6f6ff;
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    .one-dot.add {
+      border-color: #62ad44;
+      background: #d9f7c7;
+    }
+
+    .one-dot.red {
+      border-color: var(--red);
+      background: #ffdede;
+      box-shadow: 0 0 0 2px rgba(227, 59, 59, 0.18);
+      transform: scale(1.08);
+    }
+
+    .one-dot.add.red {
+      border-color: var(--red);
+      background: #d9f7c7;
+      box-shadow: 0 0 0 2px rgba(227, 59, 59, 0.35);
+    }
+
+    .bundle {
+      border: 2.5px dashed #b99a52;
+      border-radius: 8px;
+      padding: 3px;
+      display: flex;
+      flex-direction: column;
+      gap: var(--sq-gap);
+      background: #fffaf0;
+      width: max-content;
+      transition: opacity 0.2s ease, filter 0.2s ease;
+    }
+
+    .bundle.fade {
+      opacity: 0.25;
+      filter: grayscale(0.8);
+    }
+
+    .ones-result-area {
+      display: flex;
+      flex-direction: row;
+      gap: 10px;
+      align-items: flex-start;
+      position: relative;
+      min-height: 92px;
+    }
+
+    .carry-arrow {
+      display: none;
+      position: absolute;
+      left: -92px;
+      top: 54%;
+      transform: translateY(-50%);
+      z-index: 5;
+      width: 98px;
+      height: 24px;
+      animation: arrowPulse 0.8s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    .carry-arrow.show {
+      display: block;
+    }
+
+    .carry-arrow::before {
+      content: "";
+      position: absolute;
+      right: 6px;
+      top: 8px;
+      width: 70px;
+      height: 8px;
+      background: var(--carry);
+      border-radius: 999px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+
+    .carry-arrow::after {
+      content: "";
+      position: absolute;
+      left: 8px;
+      top: 1px;
+      width: 0;
+      height: 0;
+      border-top: 15px solid transparent;
+      border-bottom: 15px solid transparent;
+      border-right: 22px solid var(--carry);
+      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.12));
+    }
+
+    @keyframes arrowPulse {
+      from { transform: translateY(-50%) translateX(0); opacity: 0.65; }
+      to { transform: translateY(-50%) translateX(-8px); opacity: 1; }
+    }
+
+    .message {
+      min-height: 44px;
+      margin-top: 12px;
+      text-align: center;
+      font-size: clamp(19px, 2.5vw, 28px);
+      font-weight: 900;
+    }
+
+    .next-area {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .next {
+      min-width: 220px;
+      background: #dff3ff;
+      display: none;
+    }
+
+    .next.show {
+      display: inline-block;
+    }
+
+    .mark {
+      position: fixed;
+      left: 50%;
+      top: 46%;
+      transform: translate(-50%, -50%) scale(0.8);
+      font-size: min(26vw, 180px);
+      font-weight: 900;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 20;
+    }
+
+    .mark.ok {
+      color: var(--ok);
+      animation: popfade 0.5s ease-out forwards;
+    }
+
+    .mark.ng {
+      color: var(--ng);
+      animation: popfade 0.5s ease-out forwards;
+    }
+
+    @keyframes popfade {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+      25% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2); }
+    }
+
+    .small-note {
+      font-size: clamp(15px, 1.8vw, 20px);
+      line-height: 1.45;
+      text-align: center;
+      margin-top: 8px;
+      color: #6a5f50;
+      font-weight: 700;
+    }
+
+    @media (max-width: 820px) {
+      :root {
+        --sq: 12px;
+      }
+
+      .app {
+        padding: 10px;
+      }
+
+      .main {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        padding: 12px;
+      }
+
+      .cell {
+        min-height: 112px;
+      }
+
+      .hissan {
+        grid-template-columns: 44px 70px 70px;
+        grid-auto-rows: 54px;
+      }
+
+      .carry-arrow {
+        left: -82px;
+        width: 84px;
+      }
+
+      .carry-arrow::before {
+        width: 58px;
+      }
+
+      .carry-arrow::after {
+        left: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>くりあがりの　ひっさん</h1>
+      <div class="score">できた：<span id="solved">0</span> もん</div>
+    </header>
+
+    <div class="main">
+      <section class="panel">
+        <div class="problem" id="problemText">34 ＋ 28</div>
+
+        <div class="steps">
+          <div class="step active" id="stepJudge">
+            <div class="step-title">①　一のくらいは　10より　大きい？</div>
+            <div class="choice-row">
+              <button id="carryYes">くりあがり　あり</button>
+              <button id="carryNo">くりあがり　なし</button>
+            </div>
+          </div>
+
+          <div class="step" id="stepOnes">
+            <div class="step-title">②　一のくらいの　こたえを　かく</div>
+          </div>
+
+          <div class="step" id="stepCarry">
+            <div class="step-title">③　十のくらいに　1を　あげる</div>
+          </div>
+
+          <div class="step" id="stepTens">
+            <div class="step-title">④　十のくらいの　こたえを　かく</div>
+          </div>
+        </div>
+
+        <div class="hissan-wrap">
+          <div class="hissan" aria-label="ひっさん">
+            <input id="carryInput" class="digit carry-input" inputmode="numeric" maxlength="1" disabled />
+            <div class="a10" id="a10"></div>
+            <div class="a1" id="a1"></div>
+            <div class="op">＋</div>
+            <div class="b10" id="b10"></div>
+            <div class="b1" id="b1"></div>
+            <div class="line"></div>
+            <input id="ans10" class="digit ans10" inputmode="numeric" maxlength="1" disabled />
+            <input id="ans1" class="digit ans1" inputmode="numeric" maxlength="1" disabled />
+          </div>
+        </div>
+
+        <div class="message" id="message">まず　一のくらいを　みよう。</div>
+
+        <div class="next-area">
+          <button class="next" id="nextBtn">つぎの　もんだい</button>
+        </div>
+
+        
+      </section>
+
+      <section class="panel">
+        <div class="place-title">くらいどりひょう</div>
+
+        <div class="table">
+          <div class="cell head">十のくらい</div>
+          <div class="cell head">一のくらい</div>
+
+          <div class="cell">
+            <div class="label" id="rowA10Label"></div>
+            <div class="blocks" id="aTensBlocks"></div>
+          </div>
+          <div class="cell">
+            <div class="label" id="rowA1Label"></div>
+            <div class="vertical-ones" id="aOnesDots"></div>
+          </div>
+
+          <div class="cell">
+            <div class="label" id="rowB10Label"></div>
+            <div class="blocks" id="bTensBlocks"></div>
+          </div>
+          <div class="cell">
+            <div class="label" id="rowB1Label"></div>
+            <div class="vertical-ones" id="bOnesDots"></div>
+          </div>
+
+          <div class="cell">
+            <div class="label">あわせると</div>
+            <div class="blocks" id="totalTensBlocks"></div>
+          </div>
+          <div class="cell">
+            <div class="label" id="onesTotalLabel">一のくらいを　あわせる</div>
+            <div class="ones-result-area" id="onesResultArea">
+              <div id="onesBundleWrap"></div>
+              <div class="vertical-ones" id="totalOnesDots"></div>
+              <div class="carry-arrow" id="carryArrow" aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="mark" class="mark">〇</div>
+
+  <script>
+    const state = {
+      a: 34,
+      b: 28,
+      solved: 0,
+      step: "judge",
+      visual: "judge",
+      completed: false
+    };
+
+    const el = id => document.getElementById(id);
+
+    const problemText = el("problemText");
+    const solved = el("solved");
+    const message = el("message");
+    const mark = el("mark");
+    const nextBtn = el("nextBtn");
+
+    const carryYes = el("carryYes");
+    const carryNo = el("carryNo");
+    const carryInput = el("carryInput");
+    const ans1 = el("ans1");
+    const ans10 = el("ans10");
+
+    function digit10(n) { return Math.floor(n / 10); }
+    function digit1(n) { return n % 10; }
+
+    function onesTotal() {
+      return digit1(state.a) + digit1(state.b);
+    }
+
+    function onesRemainder() {
+      return onesTotal() - 10;
+    }
+
+    function complementToTen() {
+      return 10 - digit1(state.a);
+    }
+
+    function addRemainderAfterMakingTen() {
+      return digit1(state.b) - complementToTen();
+    }
+
+    function makeProblem() {
+      let a, b;
+      do {
+        a = 10 + Math.floor(Math.random() * 80);
+        b = 10 + Math.floor(Math.random() * 80);
+      } while (
+        digit1(a) + digit1(b) < 10 ||
+        a + b > 99
+      );
+
+      state.a = a;
+      state.b = b;
+      state.step = "judge";
+      state.visual = "judge";
+      state.completed = false;
+
+      carryInput.value = "";
+      ans1.value = "";
+      ans10.value = "";
+
+      carryInput.disabled = true;
+      ans1.disabled = true;
+      ans10.disabled = true;
+
+      carryYes.disabled = false;
+      carryNo.disabled = false;
+
+      nextBtn.classList.remove("show");
+
+      render();
+      setActiveStep("judge");
+      message.textContent = "まず　一のくらいを　みよう。";
+    }
+
+    function render() {
+      const a = state.a;
+      const b = state.b;
+
+      problemText.textContent = `${a} ＋ ${b}`;
+      el("a10").textContent = digit10(a);
+      el("a1").textContent = digit1(a);
+      el("b10").textContent = digit10(b);
+      el("b1").textContent = digit1(b);
+
+      el("rowA10Label").textContent = `${digit10(a)}こ`;
+      el("rowA1Label").textContent = `${digit1(a)}こ`;
+      el("rowB10Label").textContent = `${digit10(b)}こ`;
+      el("rowB1Label").textContent = `${digit1(b)}こ`;
+
+      fillTens(el("aTensBlocks"), digit10(a));
+      fillSquaresVertical(el("aOnesDots"), digit1(a));
+      fillTens(el("bTensBlocks"), digit10(b), { add: true });
+      fillSquaresVertical(el("bOnesDots"), digit1(b), { add: true });
+
+      renderTotalTens();
+      renderTotalOnes();
+      renderOnesLabel();
+
+      solved.textContent = state.solved;
+    }
+
+    function renderOnesLabel() {
+      const total = onesTotal();
+      const rem = onesRemainder();
+      if (state.visual === "ones") {
+        el("onesTotalLabel").innerHTML = `${digit1(state.a)} ＋ ${digit1(state.b)} ＝ 1<span class="red-num">${rem}</span>`;
+      } else {
+        el("onesTotalLabel").textContent = `${digit1(state.a)} ＋ ${digit1(state.b)} ＝ ${total}`;
+      }
+    }
+
+    function createTenBlock(options = {}) {
+      const div = document.createElement("span");
+      div.className = "ten-block";
+      if (options.add) div.classList.add("add");
+      if (options.orange) div.classList.add("orange");
+      if (options.carried) div.classList.add("carried");
+      if (options.highlight) div.classList.add("highlight");
+      for (let i = 0; i < 10; i++) {
+        const u = document.createElement("span");
+        u.className = "ten-unit";
+        div.appendChild(u);
+      }
+      return div;
+    }
+
+    function fillTens(container, count, options = {}) {
+      container.innerHTML = "";
+      for (let i = 0; i < count; i++) {
+        container.appendChild(createTenBlock(options));
+      }
+    }
+
+    function fillSquaresVertical(container, count, options = {}) {
+      container.innerHTML = "";
+      for (let i = 0; i < count; i++) {
+        const dot = document.createElement("span");
+        dot.className = "one-dot";
+        if (options.add) dot.classList.add("add");
+        if (options.redAll) dot.classList.add("red");
+        container.appendChild(dot);
+      }
+    }
+
+    function renderTotalTens() {
+      const container = el("totalTensBlocks");
+      container.innerHTML = "";
+
+      const aTens = digit10(state.a);
+      const bTens = digit10(state.b);
+      const showCarryDone = ["carryDone", "tens", "done"].includes(state.visual);
+      const tensStep = state.visual === "tens";
+
+      for (let i = 0; i < aTens; i++) {
+        container.appendChild(createTenBlock({
+          highlight: tensStep
+        }));
+      }
+
+      for (let i = 0; i < bTens; i++) {
+        container.appendChild(createTenBlock({
+          add: !tensStep,
+          orange: tensStep
+        }));
+      }
+
+      if (showCarryDone) {
+        container.appendChild(createTenBlock({
+          carried: true,
+          highlight: tensStep
+        }));
+      }
+
+      el("carryArrow").classList.toggle("show", state.visual === "carry");
+    }
+
+    function renderTotalOnes() {
+      const bundleWrap = el("onesBundleWrap");
+      const loose = el("totalOnesDots");
+      bundleWrap.innerHTML = "";
+      loose.innerHTML = "";
+
+      const bundle = document.createElement("div");
+      bundle.className = "bundle";
+      if (["carryDone", "tens", "done"].includes(state.visual)) {
+        bundle.classList.add("fade");
+      }
+
+      const aOnes = digit1(state.a);
+      const bOnes = digit1(state.b);
+      const comp = complementToTen();
+      const rem = addRemainderAfterMakingTen();
+      const redLoose = state.visual === "ones";
+
+      // 10のまとまりは「たされる数」→「たす数の補数」の順で色分けする
+      for (let i = 0; i < 10; i++) {
+        const dot = document.createElement("span");
+        dot.className = "one-dot";
+        if (i >= aOnes) dot.classList.add("add");
+        bundle.appendChild(dot);
+      }
+      bundleWrap.appendChild(bundle);
+
+      // バラは「たす数のあまり」。ここも、たす数なのできみどりを保つ
+      for (let i = 0; i < rem; i++) {
+        const dot = document.createElement("span");
+        dot.className = "one-dot add";
+        if (redLoose) dot.classList.add("red");
+        loose.appendChild(dot);
+      }
+    }
+
+    function showMark(ok) {
+      mark.className = "mark";
+      mark.textContent = ok ? "〇" : "×";
+      void mark.offsetWidth;
+      mark.classList.add(ok ? "ok" : "ng");
+    }
+
+    function setActiveStep(stepName) {
+      ["Judge", "Ones", "Carry", "Tens"].forEach(name => {
+        el(`step${name}`).classList.remove("active");
+      });
+
+      const map = {
+        judge: "stepJudge",
+        ones: "stepOnes",
+        carry: "stepCarry",
+        tens: "stepTens",
+        done: "stepTens"
+      };
+
+      if (map[stepName]) el(map[stepName]).classList.add("active");
+    }
+
+    function moveTo(stepName) {
+      state.step = stepName;
+      setActiveStep(stepName);
+
+      if (stepName === "ones") {
+        state.visual = "ones";
+        render();
+        ans1.disabled = false;
+        setTimeout(() => ans1.focus(), 80);
+        message.textContent = "一のくらいは　10こを　ひとつ　あげて、のこりを　かくよ。";
+      }
+
+      if (stepName === "carry") {
+        state.visual = "carry";
+        render();
+        carryInput.disabled = false;
+        setTimeout(() => carryInput.focus(), 80);
+        message.textContent = "十のくらいに　1を　あげよう。";
+      }
+
+      if (stepName === "tens") {
+        state.visual = "tens";
+        render();
+        ans10.disabled = false;
+        setTimeout(() => ans10.focus(), 80);
+        message.textContent = "十のくらいを　たそう。あげた　1も　わすれずに。";
+      }
+    }
+
+    function correctOnesDigit() {
+      return onesTotal() % 10;
+    }
+
+    function correctTensDigit() {
+      return Math.floor((state.a + state.b) / 10);
+    }
+
+    carryYes.addEventListener("click", () => {
+      showMark(true);
+      carryYes.disabled = true;
+      carryNo.disabled = true;
+      moveTo("ones");
+    });
+
+    carryNo.addEventListener("click", () => {
+      showMark(false);
+      message.textContent = "一のくらいが　10より　大きいと　くりあがるよ。";
+    });
+
+    function sanitizeOneDigit(input) {
+      input.value = input.value.replace(/[^\d]/g, "").slice(0, 1);
+    }
+
+    ans1.addEventListener("input", () => {
+      sanitizeOneDigit(ans1);
+      if (ans1.value === "") return;
+      const value = Number(ans1.value);
+      if (value === correctOnesDigit()) {
+        showMark(true);
+        ans1.disabled = true;
+        state.visual = "judge";
+        render();
+        moveTo("carry");
+      } else {
+        showMark(false);
+        message.textContent = "一のくらいの　のこりを　かくよ。もういちど。";
+        setTimeout(() => {
+          ans1.value = "";
+          ans1.focus();
+        }, 80);
+      }
+    });
+
+    carryInput.addEventListener("input", () => {
+      sanitizeOneDigit(carryInput);
+      if (carryInput.value === "") return;
+      const value = Number(carryInput.value);
+      if (value === 1) {
+        showMark(true);
+        carryInput.disabled = true;
+        state.visual = "carryDone";
+        render();
+        setTimeout(() => moveTo("tens"), 180);
+      } else {
+        showMark(false);
+        message.textContent = "あげる　数は　1だよ。もういちど。";
+        setTimeout(() => {
+          carryInput.value = "";
+          carryInput.focus();
+        }, 80);
+      }
+    });
+
+    ans10.addEventListener("input", () => {
+      sanitizeOneDigit(ans10);
+      if (ans10.value === "") return;
+      const value = Number(ans10.value);
+      if (value === correctTensDigit()) {
+        showMark(true);
+        ans10.disabled = true;
+        state.completed = true;
+        state.visual = "done";
+        render();
+        state.solved += 1;
+        solved.textContent = state.solved;
+        message.textContent = "できた！　つぎの　もんだいに　すすもう。";
+        nextBtn.classList.add("show");
+        setActiveStep("done");
+      } else {
+        showMark(false);
+        message.textContent = "十のくらいは　上げた　1も　たすよ。もういちど。";
+        setTimeout(() => {
+          ans10.value = "";
+          ans10.focus();
+        }, 80);
+      }
+    });
+
+    nextBtn.addEventListener("click", () => {
+      makeProblem();
+    });
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "Enter") e.preventDefault();
+    });
+
+    makeProblem();
+  </script>
+</body>
+</html>
