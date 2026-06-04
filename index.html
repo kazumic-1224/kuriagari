@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>くりあがりの ひっさん compact</title>
+  <title>くりあがりの ひっさん compact date</title>
   <style>
     :root {
       --bg: #fffaf0;
@@ -772,7 +772,7 @@
   <div class="app">
     <header>
       <h1>くりあがりの　ひっさん</h1>
-      <div class="score">できた：<span id="solved">0</span> もん</div>
+      <div class="score"><span id="todayDate"></span>　できた：<span id="solved">0</span> もん</div>
     </header>
 
     <div class="main">
@@ -885,6 +885,18 @@
     const message = el("message");
     const mark = el("mark");
     const nextBtn = el("nextBtn");
+
+    const todayDate = el("todayDate");
+
+    function setTodayDate() {
+      const now = new Date();
+      const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+      const month = now.getMonth() + 1;
+      const date = now.getDate();
+      const day = weekdays[now.getDay()];
+      todayDate.textContent = `${month}月${date}日（${day}）`;
+    }
+
 
     const carryYes = el("carryYes");
     const carryNo = el("carryNo");
@@ -1232,6 +1244,7 @@
       if (e.key === "Enter") e.preventDefault();
     });
 
+    setTodayDate();
     makeProblem();
   </script>
 </body>
